@@ -28,7 +28,7 @@ export default function SignUpForm() {
   const [usernameMessage, setUsernameMessage] = useState('');
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const debounced = useDebounceCallback(setUsername, 300);
+  const debouncedUsername = useDebounceCallback(setUsername, 300);
 
   const router = useRouter();
   const { toast } = useToast();
@@ -44,12 +44,12 @@ export default function SignUpForm() {
 
   useEffect(() => {
     const checkUsernameUnique = async () => {
-      if (username) {
+      if (debouncedUsername) {
         setIsCheckingUsername(true);
-        setUsernameMessage('');
+        setUsernameMessage(''); // Reset message
         try {
           const response = await axios.get<ApiResponse>(
-            `/api/check-username-unique?username=${username}`
+            `/api/check-username-unique?username=${debouncedUsername}`
           );
           setUsernameMessage(response.data.message);
         } catch (error) {
@@ -63,7 +63,7 @@ export default function SignUpForm() {
       }
     };
     checkUsernameUnique();
-  }, [username]);
+  }, [debouncedUsername]);
 
   const onSubmit = async (data: z.infer<typeof signupSchema>) => {
     setIsSubmitting(true);
@@ -82,13 +82,17 @@ export default function SignUpForm() {
       console.error('Error during sign-up:', error);
 
       const axiosError = error as AxiosError<ApiResponse>;
+
+      // Default error message
       let errorMessage = axiosError.response?.data.message;
       ('There was a problem with your sign-up. Please try again.');
+
       toast({
         title: 'Sign Up Failed',
         description: errorMessage,
         variant: 'destructive',
       });
+
       setIsSubmitting(false);
     }
   };
@@ -114,7 +118,7 @@ export default function SignUpForm() {
                     {...field}
                     onChange={(e) => {
                       field.onChange(e);
-                      debounced(e.target.value);
+                      setUsername(e.target.value);
                     }}
                   />
                   {isCheckingUsername && <Loader2 className="animate-spin" />}
